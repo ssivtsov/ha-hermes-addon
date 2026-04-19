@@ -21,9 +21,13 @@ RUN apt-get update && apt-get install -y \
 # Create virtualenv
 RUN python3 -m venv /opt/hermes-env
 
-# Install hermes-agent v0.10.0 from GitHub tag
+# Install hermes-agent with telegram dependencies
 RUN /opt/hermes-env/bin/pip install --upgrade pip && \
-    /opt/hermes-env/bin/pip install "git+https://github.com/NousResearch/hermes-agent.git@v2026.4.16"
+    /opt/hermes-env/bin/pip install \
+        "git+https://github.com/NousResearch/hermes-agent.git@v2026.4.16#egg=hermes-agent[telegram]" && \
+    /opt/hermes-env/bin/pip install \
+        "python-telegram-bot[job-queue]>=20.0" \
+        "httpx[socks]"
 
 # Copy run script
 COPY run.sh /run.sh

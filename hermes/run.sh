@@ -14,11 +14,12 @@ if [ -z "$HA_URL" ] || [ "$HA_URL" = "null" ] || [ "$HA_URL" = "" ]; then
 fi
 HA_TOKEN=$(jq -r '.ha_token' $CONFIG_PATH)
 
-# Create hermes data directory
-mkdir -p /data/hermes
+# Set HERMES_HOME - Hermes reads .env and config.yaml from here
+export HERMES_HOME="/data/hermes"
+mkdir -p "$HERMES_HOME"
 
-# Write hermes config.yaml
-cat > /data/hermes/config.yaml << YAML
+# Write config.yaml
+cat > "$HERMES_HOME/config.yaml" << YAML
 provider: openrouter
 model: ${DEFAULT_MODEL}
 openrouter_api_key: ${OPENROUTER_API_KEY}
@@ -26,41 +27,29 @@ openrouter_api_key: ${OPENROUTER_API_KEY}
 home_assistant:
   url: ${HA_URL}
   token: ${HA_TOKEN}
-
-data_dir: /data/hermes
 YAML
 
-# Write .env file for gateway (Hermes reads env vars from here)
-cat > /data/hermes/.env << ENV
+# Write .env - Hermes reads Telegram credentials from here
+cat > "$HERMES_HOME/.env" << ENV
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-HERMES_DATA_DIR=/data/hermes
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
 ENV
-
-# Export all env vars
-export OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"
-export HERMES_DATA_DIR="/data/hermes"
-export HERMES_HOME="/data/hermes"
 
 echo ""
 echo "================================================"
 echo "  Hermes Agent is running!"
 echo "  Model: ${DEFAULT_MODEL}"
 
-# Start Telegram gateway if token is set
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ "$TELEGRAM_BOT_TOKEN" != "null" ] && [ "$TELEGRAM_BOT_TOKEN" != "" ]; then
-    export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
-    export TELEGRAM_ALLOWED_USERS="${TELEGRAM_ALLOWED_USERS}"
     echo "  Telegram: enabled"
     echo "================================================"
     echo ""
-    echo "Starting Telegram gateway..."
-    exec hermes gateway run
+    # Run gateway in foreground (correct command per docs)
+    exec hermes gateway
 else
-    echo "  Telegram: disabled (token not set)"
+    echo "  Telegram: disabled"
     echo "================================================"
     echo ""
-    # Keep container alive
     tail -f /dev/null
 fi
