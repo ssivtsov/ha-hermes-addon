@@ -1,30 +1,29 @@
-FROM ghcr.io/home-assistant/amd64-base-python:3.12-alpine3.20
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/opt/hermes-env/bin:$PATH"
 
 # Install system dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     python3 \
     python3-dev \
-    py3-pip \
-    py3-virtualenv \
+    python3-pip \
+    python3-venv \
     git \
     curl \
     bash \
-    build-base \
+    build-essential \
     libffi-dev \
-    openssl-dev \
-    musl-dev \
-    gcc
+    libssl-dev \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create virtualenv to avoid system package conflicts
+# Create virtualenv
 RUN python3 -m venv /opt/hermes-env
 
-# Install hermes-agent into virtualenv
+# Install hermes-agent v0.10.0 from GitHub tag
 RUN /opt/hermes-env/bin/pip install --upgrade pip && \
-    /opt/hermes-env/bin/pip install "hermes-agent[all]" || \
-    /opt/hermes-env/bin/pip install "hermes-agent"
-
-# Add venv to PATH
-ENV PATH="/opt/hermes-env/bin:$PATH"
+    /opt/hermes-env/bin/pip install "git+https://github.com/NousResearch/hermes-agent.git@v2026.4.16"
 
 # Copy run script
 COPY run.sh /run.sh
