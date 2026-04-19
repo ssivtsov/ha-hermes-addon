@@ -29,6 +29,10 @@ auxiliary:
   provider: openrouter
   model: ${AUXILIARY_MODEL}
 
+tools:
+  web_search:
+    provider: duckduckgo
+
 home_assistant:
   url: ${HA_URL}
   token: ${HA_TOKEN}
@@ -46,6 +50,7 @@ echo "================================================"
 echo "  Hermes Agent is running!"
 echo "  Model: ${DEFAULT_MODEL}"
 echo "  Auxiliary: ${AUXILIARY_MODEL}"
+echo "  Web search: DuckDuckGo (no API key needed)"
 
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ "$TELEGRAM_BOT_TOKEN" != "null" ] && [ "$TELEGRAM_BOT_TOKEN" != "" ]; then
     echo "  Telegram: enabled"
