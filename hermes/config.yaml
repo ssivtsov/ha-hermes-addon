@@ -1,6 +1,6 @@
 name: "Hermes Agent"
 description: "Self-improving AI agent by Nous Research with Telegram gateway and CLI"
-version: "0.10.3"
+version: "0.10.4"
 slug: "hermes"
 init: false
 arch:
@@ -9,15 +9,12 @@ startup: application
 boot: auto
 map:
   - config:rw
-ports:
-  7860/tcp: 7860
-ports_description:
-  7860/tcp: "Hermes web interface (if enabled)"
 options:
   openrouter_api_key: ""
   telegram_bot_token: ""
   telegram_allowed_users: ""
-  default_model: "anthropic/claude-3.5-sonnet"
+  default_model: "google/gemma-3-27b-it:free"
+  auxiliary_model: "google/gemma-3-12b-it:free"
   ha_url: ""
   ha_token: ""
 schema:
@@ -25,6 +22,7 @@ schema:
   telegram_bot_token: str
   telegram_allowed_users: str
   default_model: str
+  auxiliary_model: str
   ha_url: str
   ha_token: str
 panel_icon: "mdi:robot"
