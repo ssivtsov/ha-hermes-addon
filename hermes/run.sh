@@ -22,11 +22,10 @@ export TELEGRAM_ALLOWED_USERS="${TELEGRAM_ALLOWED_USERS}"
 mkdir -p "$HERMES_HOME"
 mkdir -p /root/.hermes
 
-# Write .env using printf
+# Write .env
 printf 'OPENROUTER_API_KEY=%s\nTELEGRAM_BOT_TOKEN=%s\nTELEGRAM_ALLOWED_USERS=%s\n' \
-    "${OPENROUTER_API_KEY}" \
-    "${TELEGRAM_BOT_TOKEN}" \
-    "${TELEGRAM_ALLOWED_USERS}" > "$HERMES_HOME/.env"
+    "${OPENROUTER_API_KEY}" "${TELEGRAM_BOT_TOKEN}" "${TELEGRAM_ALLOWED_USERS}" \
+    > "$HERMES_HOME/.env"
 cp "$HERMES_HOME/.env" /root/.hermes/.env
 
 # Write config.yaml
@@ -53,24 +52,28 @@ home_assistant:
 YAML
 done
 
-# Explicitly register the API key via hermes config
-hermes config set OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" || true
+# Register key via hermes config and show result
+echo "DEBUG: Running hermes config set..."
+hermes config set OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" && echo "DEBUG: config set OK" || echo "DEBUG: config set FAILED"
+
+# Show where hermes thinks its home is
+echo "DEBUG: HERMES_HOME=${HERMES_HOME}"
+echo "DEBUG: files in HERMES_HOME:"
+ls -la "$HERMES_HOME/"
+echo "DEBUG: files in /root/.hermes:"
+ls -la /root/.hermes/ 2>/dev/null || echo "(empty)"
+
+# Show what hermes config show says
+echo "DEBUG: hermes config show:"
+hermes config show 2>/dev/null | grep -i "openrouter\|auxiliary\|api_key" || echo "(nothing found)"
 
 echo ""
 echo "================================================"
 echo "  Hermes Agent is running!"
 echo "  Model: ${DEFAULT_MODEL}"
 echo "  Auxiliary: ${AUXILIARY_MODEL}"
-echo "  Web search: DuckDuckGo"
+echo "  Telegram: enabled"
+echo "================================================"
+echo ""
 
-if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ "$TELEGRAM_BOT_TOKEN" != "null" ] && [ "$TELEGRAM_BOT_TOKEN" != "" ]; then
-    echo "  Telegram: enabled"
-    echo "================================================"
-    echo ""
-    exec hermes gateway
-else
-    echo "  Telegram: disabled"
-    echo "================================================"
-    echo ""
-    tail -f /dev/null
-fi
+exec hermes gateway
