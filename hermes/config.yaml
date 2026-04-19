@@ -1,6 +1,6 @@
 name: "Hermes Agent"
 description: "Self-improving AI agent by Nous Research with Telegram gateway and CLI"
-version: "0.10.4"
+version: "0.10.5"
 slug: "hermes"
 init: false
 arch:
