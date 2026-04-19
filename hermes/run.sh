@@ -15,15 +15,22 @@ if [ -z "$HA_URL" ] || [ "$HA_URL" = "null" ] || [ "$HA_URL" = "" ]; then
 fi
 HA_TOKEN=$(jq -r '.ha_token' $CONFIG_PATH)
 
-# Export env vars — must be before anything else
+# Debug — show first 8 chars of key to verify it's read correctly
+echo "DEBUG: API key starts with: ${OPENROUTER_API_KEY:0:8}..."
+
+# Export ALL env vars explicitly
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"
 export HERMES_HOME="/data/hermes"
+export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
+export TELEGRAM_ALLOWED_USERS="${TELEGRAM_ALLOWED_USERS}"
 
-# Create both dirs — Hermes may look in ~/.hermes by default
+# Verify export worked
+echo "DEBUG: Exported OPENROUTER_API_KEY starts with: ${OPENROUTER_API_KEY:0:8}..."
+
 mkdir -p "$HERMES_HOME"
 mkdir -p /root/.hermes
 
-# Write .env to BOTH locations
+# Write .env to both locations
 for DIR in "$HERMES_HOME" /root/.hermes; do
     cat > "$DIR/.env" << ENV
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
@@ -32,7 +39,7 @@ TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
 ENV
 done
 
-# Write config.yaml to BOTH locations
+# Write config.yaml to both locations
 for DIR in "$HERMES_HOME" /root/.hermes; do
     cat > "$DIR/config.yaml" << YAML
 provider: openrouter
