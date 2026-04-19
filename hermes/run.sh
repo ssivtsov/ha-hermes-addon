@@ -15,25 +15,36 @@ if [ -z "$HA_URL" ] || [ "$HA_URL" = "null" ] || [ "$HA_URL" = "" ]; then
 fi
 HA_TOKEN=$(jq -r '.ha_token' $CONFIG_PATH)
 
-# Set HERMES_HOME
+# Export env vars — must be before anything else
+export OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"
 export HERMES_HOME="/data/hermes"
-mkdir -p "$HERMES_HOME"
 
-# Write .env first — API key must be here for auxiliary auto-detect
-cat > "$HERMES_HOME/.env" << ENV
+# Create both dirs — Hermes may look in ~/.hermes by default
+mkdir -p "$HERMES_HOME"
+mkdir -p /root/.hermes
+
+# Write .env to BOTH locations
+for DIR in "$HERMES_HOME" /root/.hermes; do
+    cat > "$DIR/.env" << ENV
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
 ENV
+done
 
-# Write hermes config.yaml
-cat > "$HERMES_HOME/config.yaml" << YAML
+# Write config.yaml to BOTH locations
+for DIR in "$HERMES_HOME" /root/.hermes; do
+    cat > "$DIR/config.yaml" << YAML
 provider: openrouter
 model: ${DEFAULT_MODEL}
 
 auxiliary:
-  provider: openrouter
-  model: ${AUXILIARY_MODEL}
+  compression:
+    provider: openrouter
+    model: ${AUXILIARY_MODEL}
+  vision:
+    provider: openrouter
+    model: ${AUXILIARY_MODEL}
 
 tools:
   web_search:
@@ -43,6 +54,7 @@ home_assistant:
   url: ${HA_URL}
   token: ${HA_TOKEN}
 YAML
+done
 
 echo ""
 echo "================================================"
