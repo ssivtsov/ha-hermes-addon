@@ -14,23 +14,32 @@ if [ -z "$HA_URL" ] || [ "$HA_URL" = "null" ] || [ "$HA_URL" = "" ]; then
 fi
 HA_TOKEN=$(jq -r '.ha_token' $CONFIG_PATH)
 
+# Use default ~/.hermes — no HERMES_HOME override
+# Skills and data persist via /data/hermes symlink
+mkdir -p /root/.hermes
+mkdir -p /data/hermes
+
+# Symlink sessions/skills/memories to persistent storage
+for DIR in sessions skills memories cron logs; do
+    mkdir -p "/data/hermes/$DIR"
+    if [ ! -L "/root/.hermes/$DIR" ]; then
+        rm -rf "/root/.hermes/$DIR"
+        ln -s "/data/hermes/$DIR" "/root/.hermes/$DIR"
+    fi
+done
+
+# Export env vars
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"
-export HERMES_HOME="/data/hermes"
 export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
 export TELEGRAM_ALLOWED_USERS="${TELEGRAM_ALLOWED_USERS}"
 
-mkdir -p "$HERMES_HOME"
-mkdir -p /root/.hermes
-
-# Write .env
+# Write .env to default location
 printf 'OPENROUTER_API_KEY=%s\nTELEGRAM_BOT_TOKEN=%s\nTELEGRAM_ALLOWED_USERS=%s\n' \
     "${OPENROUTER_API_KEY}" "${TELEGRAM_BOT_TOKEN}" "${TELEGRAM_ALLOWED_USERS}" \
-    > "$HERMES_HOME/.env"
-cp "$HERMES_HOME/.env" /root/.hermes/.env
+    > /root/.hermes/.env
 
-# Write config.yaml
-for DIR in "$HERMES_HOME" /root/.hermes; do
-    cat > "$DIR/config.yaml" << YAML
+# Write config.yaml to default location
+cat > /root/.hermes/config.yaml << YAML
 provider: openrouter
 model: ${DEFAULT_MODEL}
 
@@ -50,22 +59,6 @@ home_assistant:
   url: ${HA_URL}
   token: ${HA_TOKEN}
 YAML
-done
-
-# Register key via hermes config and show result
-echo "DEBUG: Running hermes config set..."
-hermes config set OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" && echo "DEBUG: config set OK" || echo "DEBUG: config set FAILED"
-
-# Show where hermes thinks its home is
-echo "DEBUG: HERMES_HOME=${HERMES_HOME}"
-echo "DEBUG: files in HERMES_HOME:"
-ls -la "$HERMES_HOME/"
-echo "DEBUG: files in /root/.hermes:"
-ls -la /root/.hermes/ 2>/dev/null || echo "(empty)"
-
-# Show what hermes config show says
-echo "DEBUG: hermes config show:"
-hermes config show 2>/dev/null | grep -i "openrouter\|auxiliary\|api_key" || echo "(nothing found)"
 
 echo ""
 echo "================================================"
