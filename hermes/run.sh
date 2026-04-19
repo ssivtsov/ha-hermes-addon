@@ -3,7 +3,6 @@ set -e
 
 CONFIG_PATH=/data/options.json
 
-# Read config values
 OPENROUTER_API_KEY=$(jq -r '.openrouter_api_key' $CONFIG_PATH)
 TELEGRAM_BOT_TOKEN=$(jq -r '.telegram_bot_token' $CONFIG_PATH)
 TELEGRAM_ALLOWED_USERS=$(jq -r '.telegram_allowed_users' $CONFIG_PATH)
@@ -15,7 +14,6 @@ if [ -z "$HA_URL" ] || [ "$HA_URL" = "null" ] || [ "$HA_URL" = "" ]; then
 fi
 HA_TOKEN=$(jq -r '.ha_token' $CONFIG_PATH)
 
-# Export ALL env vars explicitly FIRST
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"
 export HERMES_HOME="/data/hermes"
 export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
@@ -24,16 +22,12 @@ export TELEGRAM_ALLOWED_USERS="${TELEGRAM_ALLOWED_USERS}"
 mkdir -p "$HERMES_HOME"
 mkdir -p /root/.hermes
 
-# Write .env using printf to avoid heredoc variable expansion issues
+# Write .env using printf
 printf 'OPENROUTER_API_KEY=%s\nTELEGRAM_BOT_TOKEN=%s\nTELEGRAM_ALLOWED_USERS=%s\n' \
     "${OPENROUTER_API_KEY}" \
     "${TELEGRAM_BOT_TOKEN}" \
     "${TELEGRAM_ALLOWED_USERS}" > "$HERMES_HOME/.env"
-
 cp "$HERMES_HOME/.env" /root/.hermes/.env
-
-echo "DEBUG: .env contents (key masked):"
-cat "$HERMES_HOME/.env" | sed 's/\(OPENROUTER_API_KEY=.\{8\}\).*/\1.../'
 
 # Write config.yaml
 for DIR in "$HERMES_HOME" /root/.hermes; do
@@ -58,6 +52,9 @@ home_assistant:
   token: ${HA_TOKEN}
 YAML
 done
+
+# Explicitly register the API key via hermes config
+hermes config set OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" || true
 
 echo ""
 echo "================================================"
